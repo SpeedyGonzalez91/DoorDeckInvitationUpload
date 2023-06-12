@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Frequency Table</title>
+    
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<h1>Frequency Table</h1>
+<button id="closeButton">x</button>
+<button id="downloadButton">Download Frequency Table</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Kiosk Group ID</th>
+                <th>Frequency</th>
+            </tr>
+        </thead>
+        <tbody>
+    <tr th:each="frequency : ${frequencyTable}">
+        <td th:text="${frequency.category}"></td>
+        <td th:text="${frequency.frequency}"></td>
+    </tr>
+</tbody>
+
+    </table>
+    <script>
+        const closeButton = document.getElementById("closeButton");
+        closeButton.addEventListener("click", function() {
+            if (confirm("Are you sure you want to close the window?")) {
+                window.location.href = "/"; // Redirect to the dashboard page
+            }
+        });
+    </script>
+    <script>
+    document.getElementById("downloadButton").addEventListener("click", function() {
+        // Make a GET request to download the frequency table
+        fetch("/frequency-table/download")
+            .then(response => response.blob())
+            .then(blob => {
+                // Create a temporary URL for the downloaded file
+                const url = URL.createObjectURL(blob);
+
+                // Create a temporary link element
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "frequency_table.csv";
+
+                // Append the link to the document body
+                document.body.appendChild(link);
+
+                // Trigger the download
+                link.click();
+
+                // Clean up the temporary URL and remove the link from the document body
+                URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+            })
+            .catch(error => {
+                console.error("Error downloading frequency table:", error);
+            });
+    });
+</script>
+
+</body>
+</html>

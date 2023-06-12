@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Invitation Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        .dashboard {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .form-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            background-color: #f5f5f5;
+        }
+
+        .form-container h2 {
+            margin-bottom: 10px;
+        }
+
+        .form-container form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-container input[type="file"],
+        .form-container input[type="submit"],
+        .form-container button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background-color: #4caf50;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .form-container input[type="submit"],
+        .form-container button {
+            background-color: #007bff;
+        }
+
+        
+    </style>
+</head>
+
+<body>
+
+
+        <div id="frequencyTable" style="display: none;">
+            <h3>Frequency Table:</h3>
+            <table id="frequency">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Frequency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Frequency table data will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="frequencyGraph" style="display: none;">
+            <h3>Frequency Graph:</h3>
+            <canvas id="graph"></canvas>
+        </div>
+    
+
+    <div class="dashboard">
+        <div class="form-container">
+            <h2>Upload Frequency CSV</h2>
+            <form method="POST" action="/frequency" enctype="multipart/form-data">
+                <input type="file" name="file" />
+                <button type="submit">Upload</button>
+            </form>
+        </div>
+
+        <div class="form-container">
+            <h2>Upload Graph CSV</h2>
+            <form method="post" action="/graph" enctype="multipart/form-data">
+                <input type="file" name="file" />
+                <input type="submit" value="Upload" />
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function handleDownload() {
+            // Make a request to the server to download the graph as a CSV file
+            fetch('/graph/download', { method: 'GET' })
+                .then(response => response.text())
+                .then(csvData => {
+                    // Create a temporary download link
+                    const downloadLink = document.createElement('a');
+                    const csvBlob = new Blob([csvData], { type: 'text/csv' });
+                    const url = URL.createObjectURL(csvBlob);
+                    downloadLink.href = url;
+                    downloadLink.download = 'graph.csv';
+
+                    // Trigger the download
+                    downloadLink.click();
+
+                    // Clean up the temporary URL
+                    URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Error downloading graph:', error);
+                });
+        }
+
+        const downloadButton = document.getElementById('downloadButton');
+        downloadButton.addEventListener('click', handleDownload);
+    </script>
+
+    <script>
+        function displayFrequencyTable() {
+            hideElements();
+            document.getElementById("frequencyTable").style.display = "block";
+
+            fetch("/frequency_table")
+                .then(response => response.json())
+                .then(data => {
+                    var tableBody = document.getElementById("frequency").getElementsByTagName("tbody")[0];
+                    tableBody.innerHTML = "";
+
+                    for (var i = 0; i < data.length; i++) {
+                        var row = tableBody.insertRow(i);
+                        var cell1 = row.insertCell(0);
+                        var cell2 = row.insertCell(1);
+                        cell1.textContent = data[i].category;
+                        cell2.textContent = data[i].frequency;
+                    }
+                })
+                .catch(error => console.error(error));
+        }
+
+        function displayFrequencyGraph() {
+            hideElements();
+            document.getElementById("frequencyGraph").style.display = "block";
+
+            fetch("/graph")
+                .then(response => response.json())
+                .then(data => {
+                    var labels = data.map(item => item.category);
+                    var frequencies = data.map(item => item.frequency);
+
+                    var ctx = document.getElementById("graph").getContext("2d");
+                    new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: "Frequency",
+                                data: frequencies,
+                                backgroundColor: "rgba(75, 192, 192, 0.6)"
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error(error));
+        }
+
+        function hideElements() {
+            document.getElementById("frequencyTable").style.display = "none";
+            document.getElementById("frequencyGraph").style.display = "none";
+        }
+    </script>
+
+    <script>
+        function uploadFile() {
+            // Trigger the file input click event
+            document.getElementById("fileInput").click();
+        }
+    </script>
+
+</body>
+</html>
